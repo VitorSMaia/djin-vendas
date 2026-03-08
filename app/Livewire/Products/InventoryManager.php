@@ -9,7 +9,6 @@ use Livewire\Component;
 
 class InventoryManager extends Component
 {
-    public $products;
     public $search = '';
 
     // Modal state
@@ -19,30 +18,98 @@ class InventoryManager extends Component
     public $quantity = 1;
     public $reason = '';
 
-    public function mount()
+    protected $listeners = [
+        'quickAdjust' => 'openModal',
+        'refresh-manager' => '$refresh',
+        'deleteProduct' => 'deleteProduct',
+        'editProduct' => 'editProduct'
+    ];
+
+    public function deleteProduct($id)
     {
-        $this->loadProducts();
+        $productId = is_array($id) ? ($id['id'] ?? null) : $id;
+
+        if (!$productId)
+            return;
+
+        $product = Product::find($productId);
+        if ($product) {
+            $product->delete();
+            $this->dispatch('refresh-table');
+            session()->flash('message', 'Produto excluído do estoque com sucesso!');
+        }
     }
 
-    public function loadProducts()
+    // Edit Product State
+    public $showEditModal = false;
+    public $editProductId = null;
+    public $editName = '';
+    public $editPrice = 0;
+    public $editCostPrice = 0;
+    public $editSku = '';
+    public $editStatus = 'active';
+
+    public function editProduct($id)
     {
-        $this->products = Product::query()
-            ->when($this->search, function ($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%');
-            })
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
+        $productId = is_array($id) ? ($id['id'] ?? $id['productId'] ?? null) : $id;
+        $product = Product::find($productId);
+        if ($product) {
+            $this->editProductId = $product->id;
+            $this->editName = $product->name;
+            $this->editPrice = $product->price;
+            $this->editCostPrice = $product->cost_price;
+            $this->editSku = $product->sku;
+            $this->editStatus = $product->status;
+            $this->showEditModal = true;
+        }
     }
 
-    public function updatedSearch()
+    public function closeEditModal()
     {
-        $this->loadProducts();
+        $this->showEditModal = false;
+        $this->editProductId = null;
     }
 
-    public function openModal($productId, $type)
+    public function updateProduct()
     {
-        $this->selectedProduct = Product::find($productId);
+        $this->validate([
+            'editName' => 'required|string|max:255',
+            'editPrice' => 'required|numeric|min:0',
+            'editCostPrice' => 'numeric|min:0',
+            'editSku' => 'required|string|max:50',
+            'editStatus' => 'required|in:active,inactive',
+        ]);
+
+        $product = Product::find($this->editProductId);
+        if ($product) {
+            $product->update([
+                'name' => $this->editName,
+                'price' => $this->editPrice,
+                'cost_price' => $this->editCostPrice,
+                'sku' => $this->editSku,
+                'status' => $this->editStatus,
+            ]);
+
+            $this->dispatch('refresh-table');
+            $this->closeEditModal();
+            session()->flash('message', 'Produto atualizado com sucesso!');
+        }
+    }
+
+
+    public function getStatsProperty()
+    {
+        return [
+            'total' => Product::where('status', 'active')->count(),
+            'in_stock' => Product::where('status', 'active')->where('stock', '>', 10)->count(),
+            'low_stock' => Product::where('status', 'active')->where('stock', '>', 0)->where('stock', '<=', 10)->count(),
+            'out_of_stock' => Product::where('status', 'active')->where('stock', '<=', 0)->count(),
+        ];
+    }
+
+    public function openModal($id, $type = 'IN')
+    {
+        $this->selectedProduct = Product::find($id);
         $this->actionType = $type;
         $this->quantity = 1;
         $this->reason = '';
@@ -77,16 +144,18 @@ class InventoryManager extends Component
             'user_id' => Auth::id(),
             'type' => $this->actionType,
             'quantity' => $qty,
-            'reason' => $this->reason ?: null,
+            'reason' => $this->reason ?: ($this->actionType === 'IN' ? 'Reposição' : 'Ajuste Manual'),
         ]);
 
-        $this->loadProducts();
+        $this->dispatch('refresh-table');
         $this->closeModal();
         session()->flash('message', 'Estoque atualizado com sucesso!');
     }
 
     public function render()
     {
-        return view('livewire.products.inventory-manager')->layout('layouts.app');
+        return view('livewire.products.inventory-manager', [
+            'stats' => $this->stats
+        ])->layout('layouts.app');
     }
 }

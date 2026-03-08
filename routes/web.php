@@ -10,8 +10,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::view('vendas', 'vendas')->name('vendas');
 
-    Route::view('auditoria', 'auditoria')->name('auditoria');
-
     Route::get('logs', fn() => LogViewer::showRoute())
         ->name('logs');
 

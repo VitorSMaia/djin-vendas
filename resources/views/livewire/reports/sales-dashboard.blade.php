@@ -55,22 +55,4 @@
         </div>
     </div>
 
-    <!-- Navigation Menu (App style) -->
-    <nav
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around z-30 px-6">
-        <a href="{{ route('vendas') }}" class="flex flex-col items-center text-slate-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            <span class="text-[10px] uppercase font-bold">Venda</span>
-        </a>
-        <a href="{{ route('dashboard') }}" class="flex flex-col items-center text-indigo-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v2m3 3h2a2 2 0 012 2v5a2 2 0 01-2 2h-2a2 2 0 01-2-2v-5a2 2 0 012-2zm-3-3V7a2 2 0 012-2h4a2 2 0 012 2v12a2 2 0 01-2 2h-4a2 2 0 01-2-2v-5a2 2 0 012-2zm-3-3V7a2 2 0 012-2h4a2 2 0 012 2v12a2 2 0 01-2 2h-4a2 2 0 01-2-2v-5a2 2 0 012-2z">
-                </path>
-            </svg>
-            <span class="text-[10px] uppercase font-bold">Relatório</span>
-        </a>
-    </nav>
 </div>

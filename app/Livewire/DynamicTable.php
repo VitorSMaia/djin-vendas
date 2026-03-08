@@ -46,75 +46,27 @@ class DynamicTable extends Component
 
     public function render()
     {
-        $isDynamoDb = is_subclass_of($this->model, \Kitar\Dynamodb\Model\Model::class);
         $query = $this->model::query();
 
         // Aplicar filtros extras passados pelo componente pai
         foreach ($this->extraFilters as $field => $value) {
-            if ($isDynamoDb) {
-                $query->filter($field, '=', $value);
-            } else {
-                $query->where($field, '=', $value);
-            }
+            $query->where($field, '=', $value);
         }
 
         if ($this->search && !empty($this->searchableColumns)) {
-            if ($isDynamoDb) {
-                // DynamoDB não suporta closures no where() da mesma forma que Eloquent
-                // Para simplificar, vamos filtrar o primeiro campo e dar OR nos outros
-                $first = true;
+            $query->where(function ($q) {
                 foreach ($this->searchableColumns as $column) {
-                    if ($first) {
-                        $query->filter($column, 'contains', $this->search);
-                        $first = false;
-                    } else {
-                        $query->orFilter($column, 'contains', $this->search);
-                    }
+                    $q->orWhere($column, 'like', '%' . $this->search . '%');
                 }
-            } else {
-                $query->where(function ($q) {
-                    foreach ($this->searchableColumns as $column) {
-                        $q->orWhere($column, 'like', '%' . $this->search . '%');
-                    }
-                });
-            }
+            });
         }
 
         if ($this->statusFilterColumn && $this->statusFilter) {
-            if ($isDynamoDb) {
-                $query->filter($this->statusFilterColumn, '=', $this->statusFilter);
-            } else {
-                $query->where($this->statusFilterColumn, '=', $this->statusFilter);
-            }
+            $query->where($this->statusFilterColumn, '=', $this->statusFilter);
         }
 
-        if ($isDynamoDb) {
-            // DynamoDB sorting via ScanIndexForward (apenas para queries com Sort Key)
-            if ($this->sortField === 'timestamp') {
-                $query->scanIndexForward($this->sortDirection === 'asc');
-            }
-
-            // DynamoDB execute
-            try {
-                // Tenta query() se houver KeyCondition, senão scan()
-                // O pacote Kitar decide based on wheres internos, mas podemos forçar
-                $results = $query->query();
-            } catch (\Exception $e) {
-                $results = $query->scan();
-            }
-
-            // Paginação manual para DynamoDB results (coleção)
-            $items = new \Illuminate\Pagination\LengthAwarePaginator(
-                $results->forPage($this->getPage(), $this->perPage),
-                $results->count(),
-                $this->perPage,
-                $this->getPage(),
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
-            );
-        } else {
-            $items = $query->orderBy($this->sortField, $this->sortDirection)
-                ->paginate($this->perPage);
-        }
+        $items = $query->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
 
         return view('livewire.dynamic-table', [
             'items' => $items,

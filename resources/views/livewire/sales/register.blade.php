@@ -67,7 +67,7 @@
 
     <!-- Bottom Actions -->
     <div
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        class="fixed bottom-16 left-0 right-0 bg-white border-t border-slate-200 p-4 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <!-- Category Toggles -->
         <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4">
             @foreach($categories as $category)

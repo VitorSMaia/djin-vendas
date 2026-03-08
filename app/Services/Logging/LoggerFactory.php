@@ -14,7 +14,6 @@ class LoggerFactory
 
         return match ($provider) {
             'cloudwatch' => new CloudWatchLogger(),
-            'dynamodb' => new \App\Services\Logging\Providers\DynamoDbLogger(),
             'local' => new LocalStorageLogger(),
             default => new LocalStorageLogger(),
         };

@@ -29,21 +29,33 @@
         </div>
     @endif
 
-    {{-- Table / List Content --}}
-    <div class="divide-y divide-slate-100 dark:divide-slate-800">
-        @forelse($items as $item)
-            <div wire:key="row-{{ $item->id }}">
-                @php
-                    // Check if there's a custom row view, otherwise render columns
-                    $rowView = $rowView ?? null;
-                @endphp
-
-                @if($rowView)
-                    @include($rowView, ['item' => $item])
-                @else
-                    <div class="p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
+    {{-- Table Content --}}
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 dark:bg-primary/5 border-b border-slate-200 dark:border-primary/20">
+                    @foreach($columns as $column)
+                        <th class="px-6 py-4 text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+                            <button wire:click="sortBy('{{ $column['field'] }}')"
+                                class="flex items-center gap-1 hover:text-primary transition-colors">
+                                {{ $column['label'] }}
+                                @if($sortField === $column['field'])
+                                    <span
+                                        class="material-symbols-outlined text-xs">{{ $sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</span>
+                                @endif
+                            </button>
+                        </th>
+                    @endforeach
+                    <th class="px-6 py-4 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 text-right">
+                        Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-primary/10">
+                @forelse($items as $item)
+                    <tr wire:key="row-{{ $item->id }}"
+                        class="hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors group">
                         @foreach($columns as $column)
-                            <div class="flex-1">
+                            <td class="px-6 py-4">
                                 @if(isset($column['view']) && view()->exists($column['view']))
                                     @include($column['view'], ['item' => $item, 'field' => $column['field']])
                                 @else
@@ -51,31 +63,36 @@
                                         {{ data_get($item, $column['field']) }}
                                     </span>
                                 @endif
-                            </div>
+                            </td>
                         @endforeach
 
-                        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-                            <button wire:click="$dispatch('editProduct', { productId: {{ $item->id }} })"
-                                class="p-2 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined">edit</span>
-                            </button>
-                            <button wire:click="$dispatch('deleteProduct', { id: {{ $item->id }} })"
-                                class="p-2 text-slate-400 hover:text-rose-500 transition-colors">
-                                <span class="material-symbols-outlined">delete</span>
-                            </button>
-                            <button wire:click="$dispatch('quickAdjust', { id: {{ $item->id }} })"
-                                class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors ml-4">
-                                <span class="material-symbols-outlined text-sm">add</span> Ajuste Rápido
-                            </button>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        @empty
-            <div class="p-8 text-center text-slate-500">
-                Nenhum item encontrado.
-            </div>
-        @endforelse
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button wire:click="$dispatch('{{ $editEvent ?? 'editProduct' }}', { id: {{ $item->id }} })"
+                                    class="p-2 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
+                                <button
+                                    wire:click="$dispatch('{{ $deleteEvent ?? 'deleteProduct' }}', { id: {{ $item->id }} })"
+                                    class="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                                <button wire:click="$dispatch('quickAdjust', { id: {{ $item->id }} })"
+                                    class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ml-2">
+                                    <span class="material-symbols-outlined text-xs">tune</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="{{ count($columns) + 1 }}" class="px-6 py-12 text-center text-slate-500">
+                            Nenhum item encontrado.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
     {{-- Pagination --}}
